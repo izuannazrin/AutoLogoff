@@ -1,0 +1,1 @@
+PowerShell -ExecutionPolicy Unrestricted -WindowStyle Hidden -File .\AutoLogoff2.ps1
