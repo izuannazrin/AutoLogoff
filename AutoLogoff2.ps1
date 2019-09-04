@@ -1,5 +1,5 @@
 ﻿# Masa untuk logoff (dalam saat)
-$Global:MasaUntukLogoff = 30*60
+$Global:MasaUntukLogoff = 15*60
 #$Global:MasaUntukLogoff = 60
 # Masa tambahan sebelum benar-benar logoff (dalam saat)
 $Global:MasaTambahan = 5*60
@@ -13,6 +13,17 @@ $Global:LogoffArgument = "/l", "/f"
 
 Add-Type -AssemblyName System.Windows.Forms
 
+
+function LogWrite {
+    param( [string]$mesej )
+
+    # Dapatkan tarikh masa
+    $datetime = $(Get-Date -Format "dd/MM/yyyy HH:mm:ss")
+
+    # Tulis ke Write-Host
+    $text = "[$($datetime)] $($mesej)"
+    Write-Host $text
+}
 
 function PaparMesej {
     param( [string]$tajuk, [string]$mesej, [string]$butangmsj = "Ok", [string]$jenismsj = "Information" )
@@ -154,7 +165,7 @@ function MintaMasaTambahan {
         $username = $maklumat.UserName
         $katalaluan = $maklumat.GetNetworkCredential().Password
 
-        Write-Host "[D] Cubaan permintaan: Username=$($username), Katalaluan=$($katalaluan)"
+        LogWrite "[D] Cubaan permintaan: Username=$($username), Katalaluan=$($katalaluan)"
     
         # Diambil dari: https://stackoverflow.com/questions/10431964/powershell-to-check-local-admin-credentials
         Add-Type -AssemblyName System.DirectoryServices.AccountManagement
@@ -189,20 +200,20 @@ function FormatMasa {
 $Global:MasaTinggal = [long]$null
 
 function TikPemasa {
-    Write-Host "[D] Tik pemasa berjalan untuk $(FormatMasa $Global:MasaUntukLogoff)"
+    LogWrite "[D] Tik pemasa berjalan untuk $(FormatMasa $Global:MasaUntukLogoff)"
     $Global:MasaTinggal = $Global:MasaUntukLogoff
 
     for (; $Global:MasaTinggal -gt 0; $Global:MasaTinggal--) {
         Start-Sleep -Seconds 1
         if ($Global:MasaTinggal -eq [System.Math]::Floor($Global:MasaUntukLogoff * (15/100))) {
             PaparMesejIkon "Amaran" "Anda mempunyai masa sebanyak $(FormatMasa $Global:MasaTinggal) sebelum logoff"
-            Write-Host "[I] Amaran 85% masa dipaparkan."
+            LogWrite "[I] Amaran 85% masa dipaparkan."
         }
     }
 
 #    $mesej = PaparMesej "Masa tamat" "Anda diberi $(FormatMasa $Global:MasaTambahan) masa tambahan untuk simpan semua kerja anda. Jangan simpan kerja anda dalam komputer ini!" "OkCancel" "Exclamation"
     $mesej = PaparMesej "Masa tamat" "Anda diberi $(FormatMasa $Global:MasaTambahan) masa tambahan untuk simpan semua kerja anda. Jangan simpan kerja anda dalam komputer ini!" "Ok" "SystemModal"
-    Write-Host "[I] Amaran 100% masa dipaparkan."
+    LogWrite "[I] Amaran 100% masa dipaparkan."
 
     for ($masa = $Global:MasaTambahan*10; $masa -ge 0; $masa--) {
         Start-Sleep -Milliseconds 100
@@ -219,20 +230,20 @@ function TikPemasa {
 
         # Kesan jika masa tambahan diberi
         If ($Global:MasaTinggal -gt 0) {
-            Write-Host "[W] Masa tinggal berubah. Memulakan semula tik pemasa."
+            LogWrite "[W] Masa tinggal berubah. Memulakan semula tik pemasa."
             return TikPemasa
         }
     }
 
     # Jika masa tambahan habis, logout komputer
-    Write-Host "[I] Menjalankan command: $($Global:LogoffPath) $($Global:LogoffArgument)"
+    LogWrite "[I] Menjalankan command: $($Global:LogoffPath) $($Global:LogoffArgument)"
     Start-Process -FilePath $Global:LogoffPath -ArgumentList $Global:LogoffArgument
 }
 
 
 try {
 
-    Write-Host "Auto-Logoff v2.5 BETA
+    LogWrite "Auto-Logoff v2.5 BETA
 "
     SetupIkon
     
@@ -241,10 +252,10 @@ try {
 
 } finally {
 
-    Write-Host "[W] Membersih..."
+    LogWrite "[W] Membersih..."
     BersihkanIkon
     BersihkanMesej
     BersihkanMintaMasaTambahan
-    Write-Host "[W] Program tamat. Terima kasih."
+    LogWrite "[W] Program tamat. Terima kasih."
 
 }
